@@ -1,4 +1,4 @@
-import mongoose from 'mongoose'
+import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema(
   {
@@ -18,26 +18,33 @@ const productSchema = new mongoose.Schema(
   {
     timestamps: true,
   }
-)
+);
 
-const ProductModel =
-  mongoose.models.Product || mongoose.model('Product', productSchema)
+// Use `try-catch` to handle potential errors
+let ProductModel: mongoose.Model<any>;
 
-export default ProductModel
+try {
+  ProductModel = mongoose.model('Product');
+} catch (error) {
+  // If the model does not exist, create it
+  ProductModel = mongoose.model('Product', productSchema);
+}
+
+export default ProductModel;
 
 export type Product = {
-  _id?: string
-  name: string
-  slug: string
-  image: string
-  banner?: string
-  price: number
-  brand: string
-  description: string
-  category: string
-  rating: number
-  numReviews: number
-  countInStock: number
-  colors?: []
-  sizes?: []
-}
+  _id?: string;
+  name: string;
+  slug: string;
+  image: string;
+  banner?: string;
+  price: number;
+  brand: string;
+  description: string;
+  category: string;
+  rating: number;
+  numReviews: number;
+  countInStock: number;
+  colors?: string[];
+  sizes?: string[];
+};

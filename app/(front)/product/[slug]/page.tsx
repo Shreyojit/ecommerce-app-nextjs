@@ -1,4 +1,5 @@
 import AddToCart from '@/components/products/AddToCart'
+import { Rating } from '@/components/products/Rating'
 import data from '@/lib/data'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -23,13 +24,7 @@ export default function ProductDetails({
       <div className="container px-5 py-24 mx-auto">
         <div className="flex flex-wrap mx-auto lg:w-full">
           <div className="items-center hidden w-1/6 grid-cols-1 grid-rows-8 gap-2 pr-4 lg:grid">
-            <Image
-              className="w-24 h-24 border-2 border-black rounded-md justify-self-end hover:border-gray-400"
-              src="https://www.beatsbydre.com/content/dam/beats/web/product/earbuds/studio-buds-plus/pdp/product-carousel/cosmic-pink/pc-le-studiobudsplus-cosmic-pink-case-open-floating.jpg"
-              alt="Image 1"
-              width={96}
-              height={96}
-            />
+         
             <Image
               className="w-24 h-24 border-2 border-black rounded-md justify-self-end hover:border-gray-400"
               src="https://www.beatsbydre.com/content/dam/beats/web/product/earbuds/studio-buds-plus/pdp/product-carousel/cosmic-pink/pc-le-studiobudsplus-cosmic-pink-earbuds-inside-outside.jpg"
@@ -128,6 +123,11 @@ export default function ProductDetails({
                   {product.countInStock > 0 ? 'In stock' : 'Unavailable'}
                 </span>
               </div>
+
+              <Rating
+                value={product.rating}
+                caption={`${product.numReviews} ratings`}
+              />
 
 
 

@@ -1,5 +1,6 @@
 'use client'
 import useCartService from '@/lib/hooks/useCartStore'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useEffect, useState } from 'react'
@@ -30,27 +31,52 @@ export default function CartDetails() {
       <table className="min-w-full bg-white border border-gray-200">
         <thead>
           <tr className="w-full bg-gray-100 border-b">
-            <th className="py-2 px-4 text-left text-gray-600">ID</th>
-            <th className="py-2 px-4 text-left text-gray-600">Name</th>
-            <th className="py-2 px-4 text-left text-gray-600">Email</th>
-            <th className="py-2 px-4 text-left text-gray-600">Role</th>
+            <th className="py-2 px-4 text-left text-gray-600">Item</th>
+            <th className="py-2 px-4 text-left text-gray-600">Quantity</th>
+            <th className="py-2 px-4 text-left text-gray-600">Price</th>
+            
           </tr>
         </thead>
-        <tbody>
-          <tr className="border-b">
-            <td className="py-2 px-4 text-gray-700">1</td>
-            <td className="py-2 px-4 text-gray-700">John Doe</td>
-            <td className="py-2 px-4 text-gray-700">john@example.com</td>
-            <td className="py-2 px-4 text-gray-700">Admin</td>
+       <tbody>
+        {items.map((item) => (
+          <tr key={item.slug}>
+            <td>
+              <Link
+              href={`/product/${item.slug}`}
+              className='flex items-centre'>
+                <Image
+                src={item.image}
+                alt={item.name}
+                width={50}
+                height={50}
+                ></Image>
+                <span className="px-2">{item.name}</span>
+              </Link>
+            </td>
+
+
+            <td>
+                      <button
+                        className="btn"
+                        type="button"
+                        onClick={() => decrease(item)}
+                      >
+                        -
+                      </button>
+                      <span className="px-2">{item.qty}</span>
+                      <button
+                        className="btn"
+                        type="button"
+                        onClick={() => increase(item)}
+                      >
+                        +
+                      </button>
+                    </td>
+                    <td>${item.price}</td>
+
           </tr>
-          <tr className="border-b">
-            <td className="py-2 px-4 text-gray-700">2</td>
-            <td className="py-2 px-4 text-gray-700">Jane Smith</td>
-            <td className="py-2 px-4 text-gray-700">jane@example.com</td>
-            <td className="py-2 px-4 text-gray-700">User</td>
-          </tr>
-        
-        </tbody>
+        ))}
+       </tbody>
       </table>
     </div>
   </div>
