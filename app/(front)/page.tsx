@@ -1,17 +1,12 @@
-
-
-import ProductItem from '@/components/products/ProductItem'
-import data from '@/lib/data'
-import productService from '@/lib/services/productService'
-import { convertDocToObj } from '@/lib/utils'
-import { Metadata } from 'next'
-import Link from 'next/link'
-
-
+import ProductItem from '@/components/products/ProductItem';
+import productService from '@/lib/services/productService';
+import { convertDocToObj } from '@/lib/utils';
+import Link from 'next/link';
 
 export default async function Home() {
-  const featuredProducts = await productService.getFeatured()
-  const latestProducts = await productService.getLatest()
+  const featuredProducts = await productService.getFeatured();
+  const latestProducts = await productService.getLatest();
+
   return (
     <>
       <div className="w-full carousel rounded-box mt-4">
@@ -56,5 +51,5 @@ export default async function Home() {
         ))}
       </div>
     </>
-  )
+  );
 }

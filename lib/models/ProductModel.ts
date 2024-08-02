@@ -33,7 +33,7 @@ try {
 export default ProductModel;
 
 export type Product = {
-  _id?: string;
+  _id: string;
   name: string;
   slug: string;
   image: string;
