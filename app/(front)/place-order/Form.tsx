@@ -1,15 +1,16 @@
 'use client'
-import CheckoutSteps from '@/components/CheckoutSteps'
-import useCartService from '@/lib/hooks/useCartStore'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import toast from 'react-hot-toast'
-import useSWRMutation from 'swr/mutation'
-import Image from 'next/image'
+
+import CheckoutSteps from '@/components/CheckoutSteps';
+import useCartService from '@/lib/hooks/useCartStore';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+import useSWRMutation from 'swr/mutation';
+import Image from 'next/image';
 
 const Form = () => {
-  const router = useRouter()
+  const router = useRouter();
   const {
     paymentMethod,
     shippingAddress,
@@ -19,57 +20,63 @@ const Form = () => {
     shippingPrice,
     totalPrice,
     clear,
-  } = useCartService()
+  } = useCartService();
 
   const { trigger: placeOrder, isMutating: isPlacing } = useSWRMutation(
     '/api/orders/mine',
     async () => {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          paymentMethod,
-          shippingAddress,
-          items,
-          itemsPrice,
-          taxPrice,
-          shippingPrice,
-          totalPrice,
-        }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        clear()
-        toast.success('Order placed successfully')
-        router.push(`/order/${data.order._id}`)
-      } else {
-        toast.error(data.message)
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            paymentMethod,
+            shippingAddress,
+            items,
+            itemsPrice,
+            taxPrice,
+            shippingPrice,
+            totalPrice,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          clear();
+          toast.success('Order placed successfully');
+          router.push(`/order/${data.order._id}`);
+        } else {
+          throw new Error(data.message || 'Failed to place order');
+        }
+      } catch (error) {
+        console.error('Error placing order:', error);
+       
       }
     }
-  )
+  );
 
   useEffect(() => {
     if (!paymentMethod) {
-      router.push('/payment')
+      router.push('/payment');
     }
     if (items.length === 0) {
-      router.push('/')
+      router.push('/');
     }
-  }, [paymentMethod, items, router])
+  }, [paymentMethod, items, router]);
 
-  const [mounted, setMounted] = useState(false)
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
-  if (!mounted) return null
+  if (!mounted) return null;
 
   return (
     <div className="container mx-auto p-4">
       <CheckoutSteps current={4} />
-
       <div className="grid md:grid-cols-4 gap-4 mt-4">
         <div className="md:col-span-3">
           <div className="bg-gray-100 p-4 rounded shadow">
@@ -82,7 +89,6 @@ const Form = () => {
               Edit
             </Link>
           </div>
-
           <div className="bg-gray-100 p-4 rounded shadow mt-4">
             <h2 className="text-lg font-semibold">Payment Method</h2>
             <p>{paymentMethod}</p>
@@ -90,7 +96,6 @@ const Form = () => {
               Edit
             </Link>
           </div>
-
           <div className="bg-gray-100 p-4 rounded shadow mt-4">
             <h2 className="text-lg font-semibold">Items</h2>
             <div className="md:col-span-3 overflow-x-auto">
@@ -112,11 +117,9 @@ const Form = () => {
                         </Link>
                       </td>
                       <td className="py-2 px-4 text-start">
-                        
                         <span className="px-2">{item.qty}</span>
-                        
                       </td>
-                      <td className="py-2 px-4 text-start">${item.price}</td>
+                      <td className="py-2 px-4 text-start">${item.price || 'N/A'}</td> {/* Fallback value */}
                     </tr>
                   ))}
                 </tbody>
@@ -127,7 +130,6 @@ const Form = () => {
             </Link>
           </div>
         </div>
-
         <div>
           <div className="bg-gray-100 p-4 rounded shadow">
             <h2 className="text-lg font-semibold">Order Summary</h2>
@@ -154,9 +156,7 @@ const Form = () => {
                   disabled={isPlacing}
                   className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:bg-gray-400 flex items-center justify-center"
                 >
-                  {isPlacing && (
-                    <span className="mr-2">Placing order...</span>
-                  )}
+                  {isPlacing && <span className="mr-2">Placing order...</span>}
                   Place Order
                 </button>
               </li>
@@ -165,6 +165,7 @@ const Form = () => {
         </div>
       </div>
     </div>
-  )
-}
-export default Form
+  );
+};
+
+export default Form;
