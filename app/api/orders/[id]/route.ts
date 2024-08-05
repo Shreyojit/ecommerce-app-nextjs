@@ -14,5 +14,6 @@ export const GET = auth(async (...request: any) => {
   }
   await dbConnect()
   const order = await OrderModel.findById(params.id)
+  console.log("FOUND ORDER__",order)
   return Response.json(order)
 }) as any

@@ -43,8 +43,10 @@ const Form = () => {
         });
 
         const data = await res.json();
+        
 
         if (res.ok) {
+          console.log("THIS IS ORDER ID___",data.order._id)
           clear();
           toast.success('Order placed successfully');
           router.push(`/order/${data.order._id}`);
