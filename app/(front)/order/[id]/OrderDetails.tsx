@@ -1,30 +1,40 @@
-'use client'
-import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js'
-import { OrderItem } from '@/lib/models/OrderModel'
-import { useSession } from 'next-auth/react'
-import Image from 'next/image'
-import Link from 'next/link'
-import toast from 'react-hot-toast'
-import useSWR from 'swr'
-import useSWRMutation from 'swr/mutation'
-import { useEffect, useState } from 'react'
+'use client';
+import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
+import { OrderItem } from '@/lib/models/OrderModel';
+import { useSession } from 'next-auth/react';
+import Image from 'next/image';
+import Link from 'next/link';
+import toast from 'react-hot-toast';
+import useSWR from 'swr';
+import { useEffect, useState } from 'react';
+import useSWRMutation from 'swr/mutation';
 
 interface User {
-    _id: string;
-    email: string;
-    name: string;
-    isAdmin: boolean;
+  _id: string;
+  email: string;
+  name: string;
+  isAdmin: boolean;
+}
+
+const fetcher = async (url: string) => {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Network response was not ok');
+    return res.json();
+  } catch (error) {
+    console.error('Fetching error:', error);
+    throw error;
   }
-  
+};
 
 export default function OrderDetails({
   orderId,
   paypalClientId,
 }: {
-  orderId: string
-  paypalClientId: string
+  orderId: string;
+  paypalClientId: string;
 }) {
-    const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const { trigger: deliverOrder, isMutating: isDelivering } = useSWRMutation(
     `/api/orders/${orderId}`,
     async (url) => {
@@ -33,13 +43,13 @@ export default function OrderDetails({
         headers: {
           'Content-Type': 'application/json',
         },
-      })
-      const data = await res.json()
-      res.ok ? toast.success('Order delivered successfully') : toast.error(data.message)
+      });
+      const data = await res.json();
+      res.ok ? toast.success('Order delivered successfully') : toast.error(data.message);
     }
-  )
+  );
 
-  const { data: session } = useSession()
+  const { data: session } = useSession();
 
   function isUser(obj: any): obj is User {
     return (
@@ -54,7 +64,6 @@ export default function OrderDetails({
   useEffect(() => {
     if (session && session.user) {
       if (isUser(session.user)) {
-        // Now TypeScript knows session.user is of type User
         console.log('User object:', session.user);
         console.log('isAdmin:', session.user.isAdmin);
         setIsAdmin(session.user.isAdmin || false);
@@ -75,7 +84,7 @@ export default function OrderDetails({
       },
     })
       .then((response) => response.json())
-      .then((order) => order.id)
+      .then((order) => order.id);
   }
 
   function onApprovePayPalOrder(data: any) {
@@ -88,14 +97,17 @@ export default function OrderDetails({
     })
       .then((response) => response.json())
       .then(() => {
-        toast.success('Order paid successfully')
-      })
+        toast.success('Order paid successfully');
+      });
   }
 
-  const { data, error } = useSWR(`/api/orders/${orderId}`)
+  const { data, error } = useSWR(`/api/orders/${orderId}`, fetcher);
 
-  if (error) return <div className="text-red-500">{error.message}</div>
-  if (!data) return <div className="text-gray-500">Loading...</div>
+  console.log('SWR Data:', data);
+  console.log('SWR Error:', error);
+
+  if (error) return <div className="text-red-500">Error: {error.message}</div>;
+  if (!data) return <div className="text-gray-500">Loading...</div>;
 
   const {
     paymentMethod,
@@ -109,7 +121,7 @@ export default function OrderDetails({
     deliveredAt,
     isPaid,
     paidAt,
-  } = data
+  } = data;
 
   return (
     <div className="p-4">
@@ -143,27 +155,27 @@ export default function OrderDetails({
             <h2 className="text-xl font-medium mb-2">Items</h2>
             <table className="min-w-full bg-white border border-gray-200">
               <thead>
-                <tr>
-                  <th className="py-2 px-4 border-b">Item</th>
-                  <th className="py-2 px-4 border-b">Quantity</th>
-                  <th className="py-2 px-4 border-b">Price</th>
-                </tr>
+              <tr className="w-full bg-gray-100 border-b">
+                    <th className="py-2 px-4 text-left text-gray-600">Item</th>
+                    <th className="py-2 px-4 text-left text-gray-600">Quantity</th>
+                    <th className="py-2 px-4 text-left text-gray-600">Price</th>
+                  </tr>
               </thead>
               <tbody>
-                {items.map((item: OrderItem) => (
-                  <tr key={item.slug}>
-                    <td className="py-2 px-4 border-b">
-                      <Link href={`/product/${item.slug}`} className="flex items-center">
-                        <Image src={item.image} alt={item.name} width={50} height={50} className="mr-2"/>
-                        <span>
-                          {item.name} ({item.color} {item.size})
-                        </span>
-                      </Link>
-                    </td>
-                    <td className="py-2 px-4 border-b">{item.qty}</td>
-                    <td className="py-2 px-4 border-b">${item.price}</td>
-                  </tr>
-                ))}
+              {items.map((item: OrderItem) => (
+                    <tr key={item.slug} className="border-b">
+                      <td className="py-2 px-4 flex items-center">
+                        <Link href={`/product/${item.slug}`} className="flex items-center space-x-2">
+                          <Image src={item.image} alt={item.name} width={50} height={50} />
+                          <span>{item.name}</span>
+                        </Link>
+                      </td>
+                      <td className="py-2 px-4 text-start">
+                        <span className="px-2">{item.qty}</span>
+                      </td>
+                      <td className="py-2 px-4 text-start">${item.price || 'N/A'}</td> {/* Fallback value */}
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
@@ -189,29 +201,35 @@ export default function OrderDetails({
                 <span>Total</span>
                 <span>${totalPrice}</span>
               </li>
-
-              {!isPaid && paymentMethod === 'PayPal' && (
-                <li className="mt-4">
-                  <PayPalScriptProvider options={{ clientId: paypalClientId }}>
-                    <PayPalButtons createOrder={createPayPalOrder} onApprove={onApprovePayPalOrder} />
-                  </PayPalScriptProvider>
-                </li>
-              )}
-              {isAdmin && (
-                <li className="mt-4">
-                  <button
-                    className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:bg-gray-300"
-                    onClick={() => deliverOrder()}
-                    disabled={isDelivering}
-                  >
-                    {isDelivering ? <span className="animate-spin">🔄</span> : 'Mark as Delivered'}
-                  </button>
-                </li>
-              )}
             </ul>
+            {!isPaid && (
+              <div className="mt-4">
+                <PayPalScriptProvider options={{ clientId: paypalClientId }}>
+                  <PayPalButtons
+                    createOrder={createPayPalOrder}
+                    onApprove={onApprovePayPalOrder}
+                    style={{ layout: 'vertical' }}
+                  />
+                </PayPalScriptProvider>
+              </div>
+            )}
+            {isAdmin && !isDelivered && (
+               <li>
+               <button
+                 className="btn w-full my-2"
+                 onClick={() => deliverOrder()}
+                 disabled={isDelivering}
+               >
+                 {isDelivering && (
+                   <span className="loading loading-spinner"></span>
+                 )}
+                 Mark as delivered
+               </button>
+             </li>
+            )} 
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

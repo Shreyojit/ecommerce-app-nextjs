@@ -46,7 +46,7 @@ const Form = () => {
         
 
         if (res.ok) {
-          console.log("THIS IS ORDER ID___",data.order._id)
+          console.log("THIS IS ORDER ID___",data.order)
           clear();
           toast.success('Order placed successfully');
           router.push(`/order/${data.order._id}`);
@@ -60,14 +60,14 @@ const Form = () => {
     }
   );
 
-  useEffect(() => {
-    if (!paymentMethod) {
-      router.push('/payment');
-    }
-    if (items.length === 0) {
-      router.push('/');
-    }
-  }, [paymentMethod, items, router]);
+  // useEffect(() => {
+  //   if (!paymentMethod) {
+  //     router.push('/payment');
+  //   }
+  //   if (items.length === 0) {
+  //     router.push('/');
+  //   }
+  // }, [paymentMethod, items, router]);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {

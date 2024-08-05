@@ -11,6 +11,7 @@ export default function OrderDetailsPage({
 }: {
   params: { id: string }
 }) {
+    console.log(params)
   return (
     <OrderDetails
       paypalClientId={process.env.PAYPAL_CLIENT_ID || 'sb'}
