@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { useEffect, useState } from 'react';
 import useSWRMutation from 'swr/mutation';
 
@@ -98,6 +98,8 @@ export default function OrderDetails({
       .then((response) => response.json())
       .then(() => {
         toast.success('Order paid successfully');
+        // Trigger re-fetch of the order details
+        mutate(`/api/orders/${orderId}`);
       });
   }
 

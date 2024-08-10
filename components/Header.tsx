@@ -1,25 +1,48 @@
 'use client'
-
-import useCartService from '@/lib/hooks/useCartStore';
-import { signIn, signOut, useSession } from 'next-auth/react';
-import Link from 'next/link';
-import React, { useEffect, useState } from 'react';
-
+import { useSearchParams } from 'next/navigation'
+import useSWR from 'swr'
+import useCartService from '@/lib/hooks/useCartStore'
+import { signIn, signOut, useSession } from 'next-auth/react'
+import Link from 'next/link'
+import React, { useEffect, useState } from 'react'
 
 interface User {
-  _id: string;
-  email: string;
-  name: string;
-  isAdmin: boolean;
+  _id: string
+  email: string
+  name: string
+  isAdmin: boolean
 }
 
-const Header = () => {
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const { items } = useCartService();
-  const [mounted, setMounted] = useState<boolean>(false);
-  const [dropdownOpen, setDropdownOpen] = useState<boolean>(false); // Add state for dropdown
-  const { data: session } = useSession(); // Use the custom Session type
+const fetcher = (url: string) => fetch(url).then(res => res.json())
 
+const Header = () => {
+  const [isAdmin, setIsAdmin] = useState<boolean>(false)
+  const { items } = useCartService()
+  const [mounted, setMounted] = useState<boolean>(false)
+  const [dropdownOpen, setDropdownOpen] = useState<boolean>(false)
+  const { data: session } = useSession()
+
+  const searchParams = useSearchParams()
+  const q = searchParams.get('q') || ''
+  const category = searchParams.get('category') || 'all'
+
+  const { data: categories, error } = useSWR<string[]>('/api/products/categories', fetcher)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (session && session.user) {
+      if (isUser(session.user)) {
+        setIsAdmin(session.user.isAdmin || false)
+      } else {
+        setIsAdmin(false)
+      }
+    } else {
+      setIsAdmin(false)
+    }
+  }, [session])
 
   function isUser(obj: any): obj is User {
     return (
@@ -28,46 +51,52 @@ const Header = () => {
       typeof obj.name === 'string' &&
       typeof obj.email === 'string' &&
       (typeof obj.isAdmin === 'boolean' || obj.isAdmin === undefined)
-    );
+    )
   }
 
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
- 
-
-  useEffect(() => {
-    if (session && session.user) {
-      if (isUser(session.user)) {
-        // Now TypeScript knows session.user is of type User
-        console.log('User object:', session.user);
-        console.log('isAdmin:', session.user.isAdmin);
-        setIsAdmin(session.user.isAdmin || false);
-      } else {
-        console.error('session.user is not of type User');
-        setIsAdmin(false);
-      }
-    } else {
-      setIsAdmin(false);
-    }
-  }, [session]);
-
   const signoutHandler = () => {
-    signOut({ callbackUrl: '/signin' });
-  };
+    signOut({ callbackUrl: '/signin' })
+  }
 
   const toggleDropdown = () => {
-    setDropdownOpen(!dropdownOpen); // Toggle the dropdown state
-  };
+    setDropdownOpen(!dropdownOpen)
+  }
+
+  if (error) return <div className="text-red-500">Error: {error.message}</div>
+  if (!categories) return <div className="text-gray-500">Loading...</div>
 
   return (
     <header>
-      <nav className='flex h-12 items-center px-4 justify-between shadow-md'>
+      <nav className='flex h-20 items-center px-4 justify-between shadow-md'>
         <Link href="/" className="text-lg font-bold">
           Ecommerce-Bengal
         </Link>
+
+        <form action="/search" method="GET" className="flex items-center space-x-2">
+  <select
+    name="category"
+    defaultValue={category}
+    className="select select-bordered w-24 text-sm"
+  >
+    <option value="all">All</option>
+    {categories.map((c) => (
+      <option key={c} value={c}>
+        {c}
+      </option>
+    ))}
+  </select>
+  <input
+    className="input input-bordered w-32 text-sm"
+    placeholder="Search"
+    defaultValue={q}
+    name="q"
+  />
+  <button type="submit" className="btn btn-primary text-sm px-3 py-1">
+    Search
+  </button>
+</form>
+
+
         <ul className="flex">
           <li>
             <Link href='/cart' className='btn btn-ghost rounded-btn p-2'>
@@ -84,7 +113,7 @@ const Header = () => {
               <div className="relative">
                 <button
                   className='btn btn-ghost rounded-btn flex items-center'
-                  onClick={toggleDropdown} // Add click handler to toggle dropdown
+                  onClick={toggleDropdown}
                 >
                   {session.user?.name}
                   <svg
@@ -102,7 +131,7 @@ const Header = () => {
                     />
                   </svg>
                 </button>
-                {dropdownOpen && ( // Render dropdown based on state
+                {dropdownOpen && (
                   <ul className="dropdown-content z-[1] p-2 shadow bg-base-300 rounded-box w-52 absolute right-0 mt-2">
                     {isAdmin ? (
                       <>
@@ -157,7 +186,7 @@ const Header = () => {
         </ul>
       </nav>
     </header>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header
