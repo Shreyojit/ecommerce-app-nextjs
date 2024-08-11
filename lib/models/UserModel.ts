@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 
 export type User = {
-  _id: string
+  _id?: string
   name: string
   email: string
   isAdmin?: boolean

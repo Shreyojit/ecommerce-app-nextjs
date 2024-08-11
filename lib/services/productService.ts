@@ -21,6 +21,33 @@ const getFeatured = cache(async () => {
     return products as Product[];
 });
 
+const getHotSelling = cache(async () => {
+    await dbConnect();
+    const products = await ProductModel.find({})
+        .sort({ numReviews: -1 }) // Assuming "hot selling" is based on review count
+        .limit(3)
+        .lean();
+    return products as Product[];
+});
+
+const getMostReviewed = cache(async () => {
+    await dbConnect();
+    const products = await ProductModel.find({})
+        .sort({ numReviews: -1 }) // Most reviewed based on review count
+        .limit(3)
+        .lean();
+    return products as Product[];
+});
+
+const getMostPopular = cache(async () => {
+    await dbConnect();
+    const products = await ProductModel.find({})
+        .sort({ rating: -1 }) // Most popular based on rating
+        .limit(3)
+        .lean();
+    return products as Product[];
+});
+
 export const getProductBySlug = async (slug: string): Promise<Product | null> => {
     await dbConnect();
     const productDoc = await ProductModel.findOne({ slug }).lean().exec();
@@ -120,6 +147,9 @@ const productService = {
     getProductBySlug,
     getCategories,
     getByQuery,
+    getHotSelling,
+    getMostReviewed,
+    getMostPopular,
 };
 
 export default productService;
