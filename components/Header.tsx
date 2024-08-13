@@ -44,6 +44,8 @@ const Header = () => {
     }
   }, [session])
 
+  console.log(session)
+
   function isUser(obj: any): obj is User {
     return (
       obj &&
