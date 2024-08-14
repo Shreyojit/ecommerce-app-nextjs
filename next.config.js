@@ -4,7 +4,7 @@ const nextConfig = {
       remotePatterns: [
         {
           protocol: 'https',
-          hostname: 'res.cloudinary.com', // if your website has no www, drop it
+          hostname: 'res.cloudinary.com',
         },
         {
           protocol: 'http',
@@ -12,6 +12,10 @@ const nextConfig = {
         },
       ],
     },
+    env: {
+      NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
+    },
   }
   
   module.exports = nextConfig
+  
