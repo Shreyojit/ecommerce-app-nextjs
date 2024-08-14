@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react';
 import { Product } from '@/lib/models/ProductModel'
 import { formatId } from '@/lib/utils'
 import Link from 'next/link'
@@ -18,6 +19,9 @@ const fetcher = async (url: string): Promise<Product[]> => {
 }
 
 export default function Products() {
+  // State to manage modal visibility
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // Fetch products data with useSWR
   const { data: products, error } = useSWR<Product[]>('/api/admin/products', fetcher)
 
@@ -76,7 +80,7 @@ export default function Products() {
         <h1 className="py-4 text-2xl">Products</h1>
         <button
           disabled={isCreating}
-          onClick={() => createProduct()}
+          onClick={() => setIsModalOpen(true)}
           className="btn btn-primary btn-sm"
         >
           {isCreating && <span className="loading loading-spinner"></span>}
@@ -128,6 +132,39 @@ export default function Products() {
           </tbody>
         </table>
       </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full relative">
+            <h2 className="text-lg font-semibold mb-4">Create New Product</h2>
+            <p>This is a placeholder for your create product form.</p>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="btn btn-ghost btn-sm mr-2"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  setIsModalOpen(false);
+                  createProduct();
+                }}
+                className="btn btn-primary btn-sm"
+              >
+                Create Product
+              </button>
+            </div>
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
