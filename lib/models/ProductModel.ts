@@ -47,4 +47,5 @@ export type Product = {
   countInStock: number;
   colors?: string[];
   sizes?: string[];
+  isFeatured?: boolean;  // Add isFeatured and make it optional if it's not always present
 };
