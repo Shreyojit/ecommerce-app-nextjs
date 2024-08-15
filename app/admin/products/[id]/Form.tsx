@@ -96,6 +96,7 @@ export default function ProductEditForm({ productId }: { productId: string }) {
       })
       const { signature, timestamp } = await resSign.json()
       const file = e.target.files[0]
+      console.log(file)
       const formData = new FormData()
       formData.append('file', file)
       formData.append('signature', signature)
@@ -108,7 +109,11 @@ export default function ProductEditForm({ productId }: { productId: string }) {
           body: formData,
         }
       )
+      console.log("res---->",res)
+
       const data = await res.json()
+      console.log(data)
+      
       setValue('image', data.secure_url)
       toast.success('File uploaded successfully', {
         id: toastId,
