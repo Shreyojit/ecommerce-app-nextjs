@@ -3,10 +3,7 @@ const nextConfig = {
     images: {
       domains: ['www.beatsbydre.com'],
       remotePatterns: [
-        {
-          protocol: 'https',
-          hostname: 'res.cloudinary.com',
-        },
+        { hostname: 'res.cloudinary.com', protocol: 'https', port: '' },
         {
           protocol: 'http',
           hostname: 'localhost',
