@@ -1,139 +1,193 @@
 'use client'
-
 import { useState } from 'react';
-import { Product } from '@/lib/models/ProductModel'
-import { formatId } from '@/lib/utils'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import toast from 'react-hot-toast'
-import useSWR from 'swr'
-import useSWRMutation from 'swr/mutation'
-import { z } from 'zod';
-import { Controller, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { Product } from '@/lib/models/ProductModel';
+import { formatId } from '@/lib/utils';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import useSWR from 'swr';
+import useSWRMutation from 'swr/mutation';
+import { useForm, ValidationRule } from 'react-hook-form';
 
-// Define the Zod schema for form validation
-const productSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  slug: z.string().min(1, "Slug is required"),
-  category: z.string().min(1, "Category is required"),
-  image: z.string().min(1, "Image URL is required"),
-  price: z.number().min(0, "Price must be positive"),
-  brand: z.string().min(1, "Brand is required"),
-  rating: z.number().min(0).max(5, "Rating must be between 0 and 5"),
-  numReviews: z.number().min(0, "Number of reviews must be positive"),
-  countInStock: z.number().min(0, "Count in stock must be positive"),
-  description: z.string().min(1, "Description is required"),
-  isFeatured: z.boolean().optional(),
-  banner: z.string().optional(),
-});
-
-type ProductFormValues = z.infer<typeof productSchema>;
-
-// Define a fetcher function for useSWR
 const fetcher = async (url: string): Promise<Product[]> => {
-  const response = await fetch(url)
+  const response = await fetch(url);
   if (!response.ok) {
-    throw new Error('Network response was not ok')
+    throw new Error('Network response was not ok');
   }
-  const data = await response.json()
-  return data // Return the array of products directly
-}
+  return response.json();
+};
 
 export default function Products() {
-  // State to manage modal visibility and form type
+  const router = useRouter();
+
+  // State for modal management
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formType, setFormType] = useState<'Create' | 'Update'>('Create');
-  const [productToUpdate, setProductToUpdate] = useState<Product | undefined>(undefined);
+  const [productToUpdate, setProductToUpdate] = useState<Product | null>(null);
 
-  // Fetch products data with useSWR
-  const { data: products, error } = useSWR<Product[]>('/api/admin/products', fetcher)
+  // SWR hook for fetching products
+  const { data: products, error } = useSWR<Product[]>('/api/admin/products', fetcher);
 
-  console.log(products)
+  const { trigger: createProduct, isMutating: isCreating } = useSWRMutation(
+    '/api/admin/products',
+    async (url, { arg }: { arg: FormData }) => {
+      console.log('Triggering API request to:', url); // Debugging line
+      const res = await fetch(url, {
+        method: 'POST',
+        body: arg,
+      });
+  
+      console.log('Response received:', res); // Debugging line
+  
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.message);
+        return;
+      }
+      console.log(data)
+      // Check if data and data.product are defined
+    if (data?.product?._id) {
+      toast.success('Product created successfully');
+      router.push(`/admin/products/${data.product._id}`);
+    } else {
+      toast.error('Product creation failed, no product ID returned.');
+    }
+    }
+  );
 
-  // React Hook Form setup
-  const { control, handleSubmit, reset, formState: { errors } } = useForm<ProductFormValues>({
-    defaultValues: productToUpdate ? {
-      name: productToUpdate.name,
-      slug: productToUpdate.slug,
-      category: productToUpdate.category,
-      image: productToUpdate.image,
-      price: productToUpdate.price,
-      brand: productToUpdate.brand,
-      rating: productToUpdate.rating,
-      numReviews: productToUpdate.numReviews,
-      countInStock: productToUpdate.countInStock,
-      description: productToUpdate.description,
-      isFeatured: productToUpdate.isFeatured,
-      banner: productToUpdate.banner,
-    } : {},
-    resolver: zodResolver(productSchema),
-  });
-
-  const onSubmit = async (data: ProductFormValues) => {
-    // Handle form submission (create or update product)
-    console.log(data);
-    // Add your form submission logic here
-  };
-
-  const router = useRouter()
-
-  // Define deleteProduct mutation
+  // Mutation for deleting a product
   const { trigger: deleteProduct } = useSWRMutation(
-    `/api/admin/products`,
+    '/api/admin/products',
     async (url, { arg }: { arg: { productId: string } }) => {
-      const toastId = toast.loading('Deleting product...')
+      const toastId = toast.loading('Deleting product...');
       const res = await fetch(`${url}/${arg.productId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
-      })
-      const data = await res.json()
-      res.ok
-        ? toast.success('Product deleted successfully', { id: toastId })
-        : toast.error(data.message, { id: toastId })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success('Product deleted successfully', { id: toastId });
+      } else {
+        toast.error(data.message, { id: toastId });
+      }
     }
-  )
+  );
 
-  // Define createProduct mutation
-  const { trigger: createProduct, isMutating: isCreating } = useSWRMutation(
-    `/api/admin/products`,
-    async (url) => {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        toast.error(data.message)
-        return
+  // React Hook Form setup
+  const { register, handleSubmit, formState: { errors }, setValue, reset } = useForm<Product>();
+
+  // Handle form submission for creating/updating a product
+  const formSubmit = async (data: Product) => {
+    try {
+      console.log('Form data before submission:', data); // Log form data
+
+      const formData = new FormData();
+      formData.append('name', data.name);
+      formData.append('slug', data.slug);
+      formData.append('price', data.price.toString());
+      formData.append('category', data.category);
+      formData.append('brand', data.brand);
+      formData.append('countInStock', data.countInStock.toString());
+      formData.append('description', data.description);
+
+      if (data.image) {
+        formData.append('image', data.image); // Use the image URL returned from Cloudinary
       }
 
-      toast.success('Product created successfully')
-      router.push(`/admin/products/${data.product._id}`)
+      console.log('FormData before API call:', formData); // Log FormData contents
+
+      await createProduct(formData); // Now simply call the mutation trigger
+      setIsModalOpen(false); // Close the modal on success
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast.error('An unexpected error occurred.');
     }
-  )
+  };
 
-  // Handle error state
-  if (error) return <div>An error has occurred: {error.message}</div>
+  // Handle file upload for images
+  const uploadHandler = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const toastId = toast.loading('Uploading image...');
+    try {
+      const resSign = await fetch('/api/cloudinary-sign', { method: 'POST' });
+      const { signature, timestamp } = await resSign.json();
+      const file = e.target.files![0];
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('signature', signature);
+      formData.append('timestamp', timestamp);
+      formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY!);
 
-  // Handle loading state
-  if (!products) return <div>Loading...</div>
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+      const data = await res.json();
+
+      if (res.ok) {
+        // Set the image URL in the form data
+        setValue('image', data.secure_url);
+        toast.success('File uploaded successfully', { id: toastId });
+      } else {
+        throw new Error(data.error.message || 'Image upload failed');
+      }
+    } catch (err: any) {
+      toast.error(err.message, { id: toastId });
+    }
+  };
+
+  if (error) return <div>An error has occurred: {error.message}</div>;
+  if (!products) return <div>Loading...</div>;
 
   const openCreateModal = () => {
     setFormType('Create');
-    setProductToUpdate(undefined);
+    setProductToUpdate(null);
+    reset();
     setIsModalOpen(true);
   };
 
   const openUpdateModal = (product: Product) => {
     setFormType('Update');
     setProductToUpdate(product);
+    reset(product);
     setIsModalOpen(true);
   };
+
+  const FormInput = ({
+    id,
+    name,
+    required,
+    pattern,
+  }: {
+    id: keyof Product;
+    name: string;
+    required?: boolean;
+    pattern?: ValidationRule<RegExp>;
+  }) => (
+    <div className="md:flex mb-6">
+      <label className="label md:w-1/5" htmlFor={id}>
+        {name}
+      </label>
+      <div className="md:w-4/5">
+        <input
+          type="text"
+          id={id}
+          {...register(id, {
+            required: required && `${name} is required`,
+            pattern,
+          })}
+          className="input input-bordered w-full max-w-md"
+        />
+        {errors[id]?.message && (
+          <div className="text-error">{errors[id]?.message}</div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div>
@@ -182,18 +236,9 @@ export default function Products() {
                   &nbsp;
                   <button
                     onClick={() => deleteProduct({ productId: product._id! })}
-                    type="button"
-                    className="btn btn-ghost btn-sm"
+                    className="btn btn-error btn-sm"
                   >
                     Delete
-                  </button>
-                  &nbsp;
-                  <button
-                    onClick={() => openUpdateModal(product)}
-                    type="button"
-                    className="btn btn-ghost btn-sm"
-                  >
-                    Update
                   </button>
                 </td>
               </tr>
@@ -202,229 +247,62 @@ export default function Products() {
         </table>
       </div>
 
-      {/* Modal */}
-    
-  {/* Modal */}
-  {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-4xl h-[80vh] overflow-auto relative">
-            <h2 className="text-lg font-semibold mb-4">{formType} Product</h2>
-
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-
-            <form onSubmit={handleSubmit(onSubmit)}>
-              {/* Name Field */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Name</label>
-                <Controller
-                  name="name"
-                  control={control}
-                  render={({ field }) => (
-                    <input
-                      {...field}
-                      type="text"
-                      className={`mt-1 block w-full border rounded-md shadow-sm ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                  )}
-                />
-                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+      {/* Modal for create/update product */}
+      {isModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h2 className="text-2xl mb-4">{formType} Product</h2>
+            <form onSubmit={handleSubmit(formSubmit)}>
+              <FormInput id="name" name="Name" required />
+              <FormInput id="slug" name="Slug" required />
+              <FormInput id="price" name="Price" required pattern={{ value: /^[0-9]+(\.[0-9]{1,2})?$/, message: 'Invalid price format' }} />
+              <FormInput id="category" name="Category" required />
+              <FormInput id="brand" name="Brand" required />
+              <FormInput id="countInStock" name="Count In Stock" required pattern={{ value: /^[0-9]+$/, message: 'Must be a number' }} />
+              <div className="md:flex mb-6">
+                <label className="label md:w-1/5" htmlFor="description">
+                  Description
+                </label>
+                <div className="md:w-4/5">
+                  <textarea
+                    id="description"
+                    {...register('description')}
+                    className="textarea textarea-bordered w-full max-w-md"
+                  ></textarea>
+                </div>
               </div>
 
-              {/* Slug Field */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Slug</label>
-                <Controller
-                  name="slug"
-                  control={control}
-                  render={({ field }) => (
-                    <input
-                      {...field}
-                      type="text"
-                      className={`mt-1 block w-full border rounded-md shadow-sm ${errors.slug ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                  )}
-                />
-                {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug.message}</p>}
+              <div className="md:flex mb-6">
+                <label className="label md:w-1/5" htmlFor="image">
+                  Image
+                </label>
+                <div className="md:w-4/5">
+                  <input
+                    type="file"
+                    id="image"
+                    accept="image/*"
+                    onChange={uploadHandler}
+                    className="file-input file-input-bordered w-full max-w-xs"
+                  />
+                </div>
               </div>
 
-              {/* Category Field */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Category</label>
-                <Controller
-                  name="category"
-                  control={control}
-                  render={({ field }) => (
-                    <input
-                      {...field}
-                      type="text"
-                      className={`mt-1 block w-full border rounded-md shadow-sm ${errors.category ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                  )}
-                />
-                {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
-              </div>
-
-              {/* Image URL Field */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Image URL</label>
-                <Controller
-                  name="image"
-                  control={control}
-                  render={({ field }) => (
-                    <input
-                      {...field}
-                      type="text"
-                      className={`mt-1 block w-full border rounded-md shadow-sm ${errors.image ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                  )}
-                />
-                {errors.image && <p className="text-red-500 text-xs mt-1">{errors.image.message}</p>}
-              </div>
-
-              {/* Price Field */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Price</label>
-                <Controller
-                  name="price"
-                  control={control}
-                  render={({ field }) => (
-                    <input
-                      {...field}
-                      type="number"
-                      step="0.01"
-                      className={`mt-1 block w-full border rounded-md shadow-sm ${errors.price ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                  )}
-                />
-                {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
-              </div>
-
-              {/* Brand Field */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Brand</label>
-                <Controller
-                  name="brand"
-                  control={control}
-                  render={({ field }) => (
-                    <input
-                      {...field}
-                      type="text"
-                      className={`mt-1 block w-full border rounded-md shadow-sm ${errors.brand ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                  )}
-                />
-                {errors.brand && <p className="text-red-500 text-xs mt-1">{errors.brand.message}</p>}
-              </div>
-
-              {/* Rating Field */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Rating</label>
-                <Controller
-                  name="rating"
-                  control={control}
-                  render={({ field }) => (
-                    <input
-                      {...field}
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="5"
-                      className={`mt-1 block w-full border rounded-md shadow-sm ${errors.rating ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                  )}
-                />
-                {errors.rating && <p className="text-red-500 text-xs mt-1">{errors.rating.message}</p>}
-              </div>
-
-              {/* Number of Reviews Field */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Number of Reviews</label>
-                <Controller
-                  name="numReviews"
-                  control={control}
-                  render={({ field }) => (
-                    <input
-                      {...field}
-                      type="number"
-                      className={`mt-1 block w-full border rounded-md shadow-sm ${errors.numReviews ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                  )}
-                />
-                {errors.numReviews && <p className="text-red-500 text-xs mt-1">{errors.numReviews.message}</p>}
-              </div>
-
-              {/* Count in Stock Field */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Count in Stock</label>
-                <Controller
-                  name="countInStock"
-                  control={control}
-                  render={({ field }) => (
-                    <input
-                      {...field}
-                      type="number"
-                      className={`mt-1 block w-full border rounded-md shadow-sm ${errors.countInStock ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                  )}
-                />
-                {errors.countInStock && <p className="text-red-500 text-xs mt-1">{errors.countInStock.message}</p>}
-              </div>
-
-              {/* Description Field */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <Controller
-                  name="description"
-                  control={control}
-                  render={({ field }) => (
-                    <textarea
-                      {...field}
-                      rows={4}
-                      className={`mt-1 block w-full border rounded-md shadow-sm ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                  )}
-                />
-                {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message}</p>}
-              </div>
-
-              {/* Is Featured Field */}
-            
-
-              {/* Banner Field */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Banner</label>
-                <Controller
-                  name="banner"
-                  control={control}
-                  render={({ field }) => (
-                    <input
-                      {...field}
-                      type="text"
-                      className={`mt-1 block w-full border rounded-md shadow-sm ${errors.banner ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                  )}
-                />
-                {errors.banner && <p className="text-red-500 text-xs mt-1">{errors.banner.message}</p>}
-              </div>
-
-              <div className="flex justify-end">
+              <div className="modal-action">
+                <button type="submit" className="btn btn-primary">
+                  {formType === 'Create' ? 'Create' : 'Update'}
+                </button>
                 <button
-                  type="submit"
-                  className="btn btn-primary"
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setIsModalOpen(false)}
                 >
-                  Save
+                  Cancel
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
     </div>
   );
 }
