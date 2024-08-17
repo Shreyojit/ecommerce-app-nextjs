@@ -7,8 +7,17 @@ import toast from 'react-hot-toast'
 import useSWR from 'swr'
 import useSWRMutation from 'swr/mutation'
 
+const fetcher = async (url: string): Promise<User[]> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
+  }
+  return response.json();
+};
+
+
 export default function Users() {
-  const { data: users, error } = useSWR(`/api/admin/users`)
+  const { data: users, error } = useSWR(`/api/admin/users`,fetcher)
   const { trigger: deleteUser } = useSWRMutation(
     `/api/admin/users`,
     async (url, { arg }: { arg: { userId: string } }) => {

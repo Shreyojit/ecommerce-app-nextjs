@@ -46,10 +46,16 @@ export default async function Home() {
       </div>
       <h2 className="text-2xl py-2">Latest Products</h2>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4">
-        {latestProducts.map((product) => (
-          <ProductItem key={product.slug} product={convertDocToObj(product)} />
-        ))}
-      </div>
+  {latestProducts.map((product) => (
+    <div
+      key={product.slug}
+      className="w-full h-full flex flex-col items-stretch justify-between border rounded-lg"
+    >
+      <ProductItem product={convertDocToObj(product)} />
+    </div>
+  ))}
+</div>
+
     </>
   );
 }

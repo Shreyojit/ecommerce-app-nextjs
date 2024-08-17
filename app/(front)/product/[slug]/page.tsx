@@ -1,16 +1,17 @@
 import AddToCart from '@/components/products/AddToCart'
 import { Rating } from '@/components/products/Rating'
-import data from '@/lib/data'
+
+import productService from '@/lib/services/productService'
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
 
-export default function ProductDetails({
+export default async  function ProductDetails({
     params,
 }:{
     params: {slug:string}
 }) {
-    const product = data.products.find((x)=>x.slug === params.slug)
+  const product = await productService.getProductBySlug(params.slug)
     if(!product) return <div>Product Not Found</div>
   return (
    <>

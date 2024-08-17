@@ -30,8 +30,8 @@ export default function ProductItem({ product }: { product: Product }) {
   };
 
   return (
-    <div className="max-w-sm w-full lg:max-w-full lg:flex relative">
-      <div className="border-r border-b border-l border-gray-400 lg:border-l-0 lg:border-t lg:border-gray-400 bg-white rounded-b lg:rounded-b-none lg:rounded-r p-4 flex flex-col justify-between leading-normal">
+   
+      <div className=" p-4 flex flex-col justify-between leading-normal">
         <div className="relative mb-8">
           <Link href={`/product/${product.slug}`} legacyBehavior>
             <a>
@@ -44,22 +44,24 @@ export default function ProductItem({ product }: { product: Product }) {
               />
             </a>
           </Link>
-          <button
-            className="absolute top-2 right-2 z-10"
-            onClick={toggleBookmark}
-          >
- {isBookmarked ? <FaHeart className="text-red-500 text-2xl" /> : <CiHeart className="text-2xl" />}      
-     </button>
+         
           <div className="text-gray-900 font-bold text-xl mb-2">{product.name}</div>
           <p className="text-gray-700 text-base">{product.description}</p>
         </div>
-        <div className="flex items-center">
-          <div className="text-sm justify between">
-            <p className="text-gray-900 leading-none">{product.brand}</p>
-            <p className="text-gray-600">${product.price}</p>
-          </div>
-        </div>
+        <div className="flex items-center justify-between relative">
+  <div className="text-sm">
+    <p className="text-gray-900 leading-none">{product.brand}</p>
+    <p className="text-gray-600">${product.price}</p>
+  </div>
+  <button
+    className="absolute top-2 right-2 z-10"
+    onClick={toggleBookmark}
+  >
+    {isBookmarked ? <FaHeart className="text-red-500 text-2xl" /> : <CiHeart className="text-2xl" />}
+  </button>
+</div>
+
       </div>
-    </div>
+   
   );
 }

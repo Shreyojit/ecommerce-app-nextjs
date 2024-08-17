@@ -3,8 +3,17 @@ import { Order } from '@/lib/models/OrderModel'
 import Link from 'next/link'
 import useSWR from 'swr'
 
+const fetcher = async (url: string): Promise<Order[]> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
+  }
+  return response.json();
+};
+
+
 export default function Orders() {
-  const { data: orders, error } = useSWR(`/api/admin/orders`)
+  const { data: orders, error } = useSWR(`/api/admin/orders`,fetcher)
   if (error) return 'An error has occurred.'
   if (!orders) return 'Loading...'
 
